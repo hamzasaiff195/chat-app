@@ -3,12 +3,7 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 const formatMessage = require('./utils/messages');
-const {
-  userJoin,
-  getCurrentUser,
-  userLeave,
-  getRoomUsers
-} = require('./utils/users');
+const { userJoin, getCurrentUser, userLeave, getRoomUsers } = require('./utils/users');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const botName = 'ChatCord Bot';
 
 // Run when client connects
-io.on('connection', socket => {
+io.on('connection', (socket) => {
   socket.on('joinRoom', ({ username, room }) => {
     const user = userJoin(socket.id, username, room);
 
@@ -29,23 +24,20 @@ io.on('connection', socket => {
     // Welcome current user
     socket.emit('message', formatMessage(botName, 'Welcome to ChatCord!'));
 
-    // Broadcast when a user connects
+    // Broadcast when a user connects //  Broadcast to all users except client that is connecting.
     socket.broadcast
       .to(user.room)
-      .emit(
-        'message',
-        formatMessage(botName, `${user.username} has joined the chat`)
-      );
+      .emit('message', formatMessage(botName, `${user.username} has joined the chat`));
 
-    // Send users and room info
+    // Send users and room info // all the clients in general
     io.to(user.room).emit('roomUsers', {
       room: user.room,
-      users: getRoomUsers(user.room)
+      users: getRoomUsers(user.room),
     });
   });
 
   // Listen for chatMessage
-  socket.on('chatMessage', msg => {
+  socket.on('chatMessage', (msg) => {
     const user = getCurrentUser(socket.id);
 
     io.to(user.room).emit('message', formatMessage(user.username, msg));
@@ -58,13 +50,13 @@ io.on('connection', socket => {
     if (user) {
       io.to(user.room).emit(
         'message',
-        formatMessage(botName, `${user.username} has left the chat`)
+        formatMessage(botName, `${user.username} has left the chat`),
       );
 
       // Send users and room info
       io.to(user.room).emit('roomUsers', {
         room: user.room,
-        users: getRoomUsers(user.room)
+        users: getRoomUsers(user.room),
       });
     }
   });
